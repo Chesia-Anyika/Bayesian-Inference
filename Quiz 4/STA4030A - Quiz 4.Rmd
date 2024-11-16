@@ -1,0 +1,487 @@
+---
+title: "STA4030A - Quiz 4"
+author: "Chesia Anyika"
+date: "2024-11-11"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(gridExtra)
+
+```
+
+# Question 1
+
+**Concentrations of the pollutants aldrin and hexachlorobenzene (HCB) in
+nanograms per liter were measured in ten surface water samples, ten
+mid-depth water samples, and ten bottom samples from the Wolf River in
+Tennessee. The samples were taken downstream from an abandoned dump site
+previously used by the pesticide industry. The full data set can be
+found at this URL. For this problem, we consider only HCB measurements
+taken at the bottom and the surface. The question of interest is whether
+the distribution of HCB concentration depends on the depth at which the
+measurement was taken. The data for this problem are given below.**
+
+| **Surface** | **Bottom** |
+|-------------|------------|
+| **3.74**    | **5.44**   |
+| **4.61**    | **6.88**   |
+| **4.00**    | **5.37**   |
+| **4.67**    | **5.44**   |
+| **4.87**    | **5.03**   |
+| **5.12**    | **6.48**   |
+| **4.52**    | **3.89**   |
+| **5.29**    | **5.85**   |
+| **5.74**    | **6.85**   |
+| **5.48**    | **7.16**   |
+
+**Assume the observations are independent normal random variables with
+unknown depth-specific means 𝜃𝑠 and 𝜃𝑏 and precisions 𝜌𝑠 and 𝜌𝑏. Assume
+independent improper reference priors for the surface and bottom
+parameters:**
+
+**𝑔(𝜃𝑠, 𝜃𝑏, 𝜌𝑠, 𝜌𝑏) = 𝑔(𝜃𝑠, 𝜌𝑠)𝑔(𝜃𝑏, 𝜌𝑏) ∝ 𝜌𝑠 −1𝜌𝑏 −1.**
+
+**This prior can be treated as the product of two normal-gamma priors
+with 𝜇𝑠 = 𝜇𝑏 = 0, 𝑘𝑠 = 𝑘𝑏 = 0, 𝑎𝑠 = 𝑎𝑏 = − 1 2, and 𝑏𝑠 = 𝑏𝑏 = ∞. (These
+are not valid normal-gamma distributions, but you can use the usual
+Bayesian conjugate updating rule to find the posterior distribution.)
+Find the joint posterior distribution for the parameters (𝜃𝑠, 𝜃𝑏, 𝜌𝑠,
+𝜌𝑏). State the type of distribution and the posterior hyperparameters.
+Find 90% posterior credible intervals for 𝜃𝑠, 𝜃𝑏, 𝜌𝑠, and 𝜌𝑏. Comment on
+your results.**
+
+## Step 1: Input Data
+
+First, I input the data provided as follows:
+
+```{r}
+# HCB concentration data
+surface <- c(3.74, 4.61, 4.00, 4.67, 4.87, 5.12, 4.52, 5.29, 5.74, 5.48)
+bottom <- c(5.44, 6.88, 5.37, 5.44, 5.03, 6.48, 3.89, 5.85, 6.85, 7.16)
+
+#View results
+print(surface)
+print(bottom)
+```
+
+## Step 2: Compute Posterior Hyperparameters
+
+With the prior assumptions, we can compute the posterior parameters for
+$\theta_{s}, \theta_{b}, \rho_{s}, \rho_{b}$ as follows:
+
+1.  Compute sample means and variances for both depths:
+    -   $\bar y_{s}$ and $\bar y_{b}$ (means for surface and bottom)
+    -   $s^2_s$ and $s^2_b$ (sample variances for surface bottom)
+2.  Set prior hyperparameters based on the question's guidance:
+    -   $a_s = a_b = -1/2$
+    -   $k_s = k_b = 0$ (reflects no information in prior)
+    -   $b_s = b_b = \infty$
+
+I implemented this as follows:
+
+```{r}
+# Sample means and variances
+mean_surface <- mean(surface)
+mean_bottom <- mean(bottom)
+var_surface <- var(surface)
+var_bottom <- var(bottom)
+
+# Number of samples
+n_s <- length(surface)
+n_b <- length(bottom)
+
+
+```
+
+Since we're not given proper normal-gamma priors, we'll directly use the
+Bayesian updating rules for the posterior. For Bayesian conjugate
+updates in the normal model with unknown mean and precision, the
+posterior distributions for $\theta$ and $\rho$ are:
+
+-   $\theta_{s}|\rho_{s}, \text{data} \sim N(\bar X_{s}, \frac{\rho_s}{n_s})$
+
+-   $\theta_{b}|\rho_{b}, \text{data} \sim N(\bar X_{b}, \frac{\rho_b}{n_b})$
+
+-   $\rho_s \sim \text{Gamma}(\frac{n_s -1}{2},\frac{(n_s-1)S^2_s}{2})$
+
+-   $\rho_b \sim \text{Gamma}(\frac{n_b -1}{2},\frac{(n_b-1)S^2_b}{2})$
+
+I computed this as follows:
+
+```{r}
+# Posterior parameters for theta_s and rho_s
+posterior_theta_s_mean <- mean_surface
+posterior_theta_s_var <- var_surface / n_s
+
+posterior_rho_s_shape <- (n_s - 1) / 2
+posterior_rho_s_rate <- (n_s - 1) * var_surface / 2
+
+# Posterior parameters for theta_b and rho_b
+posterior_theta_b_mean <- mean_bottom
+posterior_theta_b_var <- var_bottom / n_b
+
+posterior_rho_b_shape <- (n_b - 1) / 2
+posterior_rho_b_rate <- (n_b - 1) * var_bottom / 2
+
+```
+
+## Step 3: Visualise Posterior Distribution
+
+I first defined the posterior distributions and generated plot data, as
+follows:
+
+```{r}
+# Posterior distributions for theta
+theta_s_dist <- function(x) dnorm(x, mean = posterior_theta_s_mean, sd = sqrt(posterior_theta_s_var))
+theta_b_dist <- function(x) dnorm(x, mean = posterior_theta_b_mean, sd = sqrt(posterior_theta_b_var))
+
+# Posterior distributions for rho
+rho_s_dist <- function(x) dgamma(x, shape = posterior_rho_s_shape, rate = posterior_rho_s_rate)
+rho_b_dist <- function(x) dgamma(x, shape = posterior_rho_b_shape, rate = posterior_rho_b_rate)
+
+# Generate sequence for theta (mean) distributions
+theta_x <- seq(posterior_theta_s_mean - 3 * sqrt(posterior_theta_s_var), 
+               posterior_theta_s_mean + 3 * sqrt(posterior_theta_s_var), length.out = 100)
+
+theta_s_data <- data.frame(x = theta_x, y = theta_s_dist(theta_x))
+theta_b_data <- data.frame(x = theta_x, y = theta_b_dist(theta_x))
+
+# Generate sequence for rho (precision) distributions
+rho_x <- seq(0, qgamma(0.99, shape = posterior_rho_b_shape, rate = posterior_rho_b_rate), length.out = 100)
+
+rho_s_data <- data.frame(x = rho_x, y = rho_s_dist(rho_x))
+rho_b_data <- data.frame(x = rho_x, y = rho_b_dist(rho_x))
+
+
+```
+
+I then plotted the posterior distributions as follwos;
+
+```{r}
+# Plot for theta_s (mean for surface)
+p1 <- ggplot(theta_s_data, aes(x, y)) + 
+  geom_line(color = "blue") +
+  labs(title = expression(paste("Posterior Distribution of ", theta[s])),
+       x = expression(theta[s]), y = "Density") +
+  theme_minimal()
+
+# Plot for theta_b (mean for bottom)
+p2 <- ggplot(theta_b_data, aes(x, y)) + 
+  geom_line(color = "red") +
+  labs(title = expression(paste("Posterior Distribution of ", theta[b])),
+       x = expression(theta[b]), y = "Density") +
+  theme_minimal()
+
+# Plot for rho_s (precision for surface)
+p3 <- ggplot(rho_s_data, aes(x, y)) + 
+  geom_line(color = "blue") +
+  labs(title = expression(paste("Posterior Distribution of ", rho[s])),
+       x = expression(rho[s]), y = "Density") +
+  theme_minimal()
+
+# Plot for rho_b (precision for bottom)
+p4 <- ggplot(rho_b_data, aes(x, y)) + 
+  geom_line(color = "red") +
+  labs(title = expression(paste("Posterior Distribution of ", rho[b])),
+       x = expression(rho[b]), y = "Density") +
+  theme_minimal()
+
+# Arrange the plots in a 2x2 grid
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+```
+
+**Interpretation**
+
+1\. **Posterior Distribution of** $\theta_s$ (Top Left Plot):
+
+-   This plot shows the posterior distribution of $\theta$, which
+    represents the mean HCB concentration at the **surface** depth.
+
+-   The distribution appears approximately normal and is centered around
+    a value of about **4.8**. This suggests that the most likely mean
+    HCB concentration at the surface depth is around 4.8 ng/L.
+
+-   The relatively narrow spread of the distribution indicates lower
+    uncertainty in the estimate for $\theta$, meaning we have reasonable
+    confidence in the concentration being close to this value based on
+    the data.
+
+2\. **Posterior Distribution of** $\theta_b$ (Top Right Plot):
+
+-   This plot displays the posterior distribution of $\theta_b$
+    representing the mean HCB concentration at the **bottom** depth.
+
+-   The distribution is skewed right and does not look like a typical
+    normal distribution; it peaks around 4.9 and trails off toward
+    higher values. This indicates a higher uncertainty in the estimate
+    for $\theta_b$ compared to $\theta_s$.
+
+-   The skewed shape suggests that while the mean HCB concentration at
+    the bottom depth is likely around 4.9 ng/L, there's a possibility
+    for it to be higher. This may reflect a greater variability in
+    concentrations at the bottom depth or a less precise estimate.
+
+3\. **Posterior Distribution of** $\rho$ (Bottom Left Plot):
+
+-   This plot represents the posterior distribution of $\rho$, the
+    precision (inverse variance) of HCB concentration at the **surface**
+    depth.
+
+-   The distribution is right-skewed, with a peak around **1.0** and a
+    slow decay as $\rho_s$ increases. A higher precision value indicates
+    that the data are more tightly concentrated around the mean.
+
+-   The shape of this distribution suggests moderate precision, meaning
+    there is some concentration of values around the mean, but it's not
+    extremely precise, indicating moderate variability in surface HCB
+    concentrations.
+
+4\. **Posterior Distribution of** $\rho_b$ (Bottom Right Plot):
+
+-   This plot shows the posterior distribution of $\rho_b$, representing
+    the precision of HCB concentration at the **bottom** depth.
+
+-   The distribution for $\rho_b$ has a similar shape to $\rho_s$, but
+    it peaks slightly higher, around **1.5**. This suggests that the
+    precision for bottom depth measurements is a bit higher than for
+    surface measurements.
+
+-   Higher precision implies that the concentration values at the bottom
+    are likely to be more closely clustered around the mean compared to
+    the surface, despite the skew seen in the mean's distribution.
+
+**Summary**
+
+\- The surface mean is more symmetrically distributed, suggesting a more
+reliable estimate, while the bottom mean is skewed, indicating more
+uncertainty or variability.
+
+\- The precision values suggest that bottom concentrations are somewhat
+more tightly clustered around their mean, though there's still moderate
+variability at both depths.
+
+## Step 4: 90% Posterior Credible Intervals
+
+Using the posterior distributions, we calculate the 90% credible
+intervals.
+
+```{r}
+# Credible intervals for theta_s and theta_b (Normal distribution)
+theta_s_lower <- posterior_theta_s_mean - qnorm(0.95) * sqrt(posterior_theta_s_var)
+theta_s_upper <- posterior_theta_s_mean + qnorm(0.95) * sqrt(posterior_theta_s_var)
+
+theta_b_lower <- posterior_theta_b_mean - qnorm(0.95) * sqrt(posterior_theta_b_var)
+theta_b_upper <- posterior_theta_b_mean + qnorm(0.95) * sqrt(posterior_theta_b_var)
+
+# Credible intervals for rho_s and rho_b (Gamma distribution)
+rho_s_lower <- qgamma(0.05, shape = posterior_rho_s_shape, rate = posterior_rho_s_rate)
+rho_s_upper <- qgamma(0.95, shape = posterior_rho_s_shape, rate = posterior_rho_s_rate)
+
+rho_b_lower <- qgamma(0.05, shape = posterior_rho_b_shape, rate = posterior_rho_b_rate)
+rho_b_upper <- qgamma(0.95, shape = posterior_rho_b_shape, rate = posterior_rho_b_rate)
+
+# Display results
+cat("90% Credible Interval for theta_s:", theta_s_lower, "to", theta_s_upper, "\n")
+cat("90% Credible Interval for theta_b:", theta_b_lower, "to", theta_b_upper, "\n")
+cat("90% Credible Interval for rho_s:", rho_s_lower, "to", rho_s_upper, "\n")
+cat("90% Credible Interval for rho_b:", rho_b_lower, "to", rho_b_upper, "\n")
+
+```
+
+**Interpretation**
+
+Certainly, here's a more concise interpretation for each interval:
+
+1\. $\theta_s$**: 4.48 to 5.13** -- We are 90% confident that the mean
+HCB concentration at the surface is between 4.48 and 5.13 ng/L,
+indicating a relatively precise estimate.
+
+2\. $\theta_b$**: 5.31 to 6.37** -- We are 90% confident that the mean
+HCB concentration at the bottom is between 5.31 and 6.37 ng/L,
+suggesting higher concentration levels and greater uncertainty than at
+the surface.
+
+3\. $\rho_s$**: 0.93 to 4.72** -- We are 90% confident that the
+precision of surface measurements is between 0.93 and 4.72, indicating
+moderate variability.
+
+4\. $\rho_b$**: 0.36 to 1.83** -- We are 90% confident that the
+precision of bottom measurements is between 0.36 and 1.83, suggesting
+more variability at the bottom depth.
+
+------------------------------------------------------------------------
+
+# Question 2
+
+**Use direct Monte Carlo to sample 10,000 observations from the joint
+posterior distribution of (𝜃𝑠, 𝜃𝑏, 𝜌𝑠, 𝜌𝑏). Use your Monte Carlo samples
+to estimate 90% posterior credible intervals for 𝜃𝑠, 𝜃𝑏, 𝜌𝑠, and 𝜌𝑏.**
+
+I implemented this as follows:
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Number of samples for Monte Carlo
+num_samples <- 10000
+
+# Vectors to store Monte Carlo samples
+theta_s_samples <- numeric(num_samples)
+theta_b_samples <- numeric(num_samples)
+rho_s_samples <- numeric(num_samples)
+rho_b_samples <- numeric(num_samples)
+
+# Generate samples
+for (i in 1:num_samples) {
+  # Sample rho_s and rho_b from Gamma distributions
+  rho_s_samples[i] <- rgamma(1, shape = -0.5 + n_s / 2, rate = sum((surface - mean_surface)^2) / 2)
+  rho_b_samples[i] <- rgamma(1, shape = -0.5 + n_b / 2, rate = sum((bottom - mean_bottom)^2) / 2)
+  
+  # Sample theta_s and theta_b from Normal distributions
+  theta_s_samples[i] <- rnorm(1, mean = mean_surface, sd = sqrt(1 / (rho_s_samples[i] * n_s)))
+  theta_b_samples[i] <- rnorm(1, mean = mean_bottom, sd = sqrt(1 / (rho_b_samples[i] * n_b)))
+}
+
+```
+
+```{r}
+# Compute credible intervals
+theta_s_ci <- quantile(theta_s_samples, probs = c(0.05, 0.95))
+theta_b_ci <- quantile(theta_b_samples, probs = c(0.05, 0.95))
+rho_s_ci <- quantile(rho_s_samples, probs = c(0.05, 0.95))
+rho_b_ci <- quantile(rho_b_samples, probs = c(0.05, 0.95))
+
+cat("90% CI for theta_s:", theta_s_ci, "\n")
+cat("90% CI for theta_b:", theta_b_ci, "\n")
+cat("90% CI for rho_s:", rho_s_ci, "\n")
+cat("90% CI for rho_b:", rho_b_ci, "\n")
+
+```
+
+**Interpretation**
+
+1\. $\theta_s$ **90% CI [4.44, 5.16]:** The mean HCB concentration at
+the surface is likely between 4.44 and 5.16 ng/L.
+
+2\. $\theta_b$ **90% CI [5.23, 6.40]:** The mean HCB concentration at
+the bottom is likely between 5.23 and 6.40 ng/L.
+
+3\. $\rho_s$ **90% CI [0.93, 4.75]:** The precision (inverse variance)
+of surface concentrations is estimated to be between 0.93 and 4.75,
+indicating moderate consistency.
+
+4\. $\rho_b$ **90% CI [0.35, 1.84]:** The precision of bottom
+concentrations is between 0.35 and 1.84, suggesting higher variability
+than at the surface.
+
+**Summary:** The results indicate higher and more variable HCB
+concentrations at the river bottom than at the surface, suggesting
+depth-related differences in pollutant distribution.
+
+------------------------------------------------------------------------
+
+# Question 3
+
+**Use your direct Monte Carlo sample to estimate the probability that
+the mean bottom concentration 𝜃𝑏 is higher than the mean surface
+concentration 𝜃𝑠 and to estimate the probability that the standard
+deviation 𝜎𝑏 of the bottom concentrations is higher than the standard
+deviation 𝜎𝑠 of the surface concentrations.**
+
+I implemented this as follows:
+
+```{r}
+# Probability that theta_b > theta_s
+prob_theta_b_greater <- mean(theta_b_samples > theta_s_samples)
+
+# Compute standard deviations from rho samples
+sigma_s_samples <- 1 / sqrt(rho_s_samples)
+sigma_b_samples <- 1 / sqrt(rho_b_samples)
+
+# Probability that sigma_b > sigma_s
+prob_sigma_b_greater <- mean(sigma_b_samples > sigma_s_samples)
+
+cat("Probability that theta_b > theta_s:", prob_theta_b_greater, "\n")
+cat("Probability that sigma_b > sigma_s:", prob_sigma_b_greater, "\n")
+
+```
+
+**Interpretation**
+
+1\. **Probability that** $\theta_b > \theta_s: 0.9877$**:** There is a
+98.77% probability that the mean HCB concentration at the bottom is
+higher than at the surface.
+
+2\. **Probability that** $\sigma_b > \sigma_s: 0.9128$**:** There is a
+91.28% probability that the standard deviation of HCB concentrations at
+the bottom is higher than at the surface.
+
+------------------------------------------------------------------------
+
+# Question 4
+
+**Comment on your analysis. What are your conclusions about the
+distributions of surface and bottom concentrations? Is the assumption of
+normality reasonable? Are the means different for surface and bottom?
+The standard deviations?**
+
+### Analysis and Interpretation:
+
+1\. **Distributions of Surface and Bottom Concentrations:**
+
+The analysis suggests that the distributions of HCB concentrations at
+the surface and bottom differ significantly. The posterior credible
+intervals for the mean concentrations at the surface and bottom (with a
+clear separation between $\theta_s$ and $\theta_b$ indicate a higher
+concentration at the bottom compared to the surface, with the bottom
+also showing more variability in concentrations (as indicated by the
+wider credible intervals for $\rho_b$.
+
+2\. **Reasonableness of Normality Assumption:**
+
+The assumption of normality appears reasonable, as the credible
+intervals for the means and precision parameters suggest that the
+surface and bottom concentrations follow roughly normal distributions
+with some degree of variability. While normality cannot be perfectly
+verified with small samples, the use of Bayesian analysis with conjugate
+priors is robust to the assumption of normality and allows for a
+reasonable approximation in this case.
+
+3\. **Are the Means Different for Surface and Bottom?**
+
+Yes, the means are significantly different: the 90% credible intervals
+for $\theta_s$ and $\theta_b$ do not overlap, with the bottom having a
+higher mean concentration. This provides strong evidence that HCB
+concentrations at the bottom are higher than at the surface.
+
+4\. **Are the Standard Deviations Different?**
+
+Yes, the standard deviations (or variances) differ: the probability that
+$\sigma_b$ (bottom) is greater than $\sigma_s$ (surface) is 91.28%,
+indicating a much higher degree of variability in bottom concentrations.
+The credible intervals for $\rho_s$ and $\rho_b$ support this, with the
+bottom showing lower precision (higher variance) than the surface.
+
+### Conclusion:
+
+HCB concentrations at the bottom are higher and more variable compared
+to the surface, suggesting depth-related differences in the distribution
+of pollutants. The assumption of normality seems reasonable for this
+dataset, and the means and standard deviations are indeed different
+between surface and bottom concentrations. These differences likely
+reflect environmental processes affecting pollutant distribution along
+the depth of the river.

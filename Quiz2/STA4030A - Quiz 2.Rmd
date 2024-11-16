@@ -1,0 +1,623 @@
+---
+title: "STA4030 - Quiz 2"
+author: "Chesia Anyika"
+date: "2024-10-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+
+```{r}
+library(ggplot2)
+```
+
+# Question 1
+
+**Tarone (1982) reports data from 71 studies on tumor incidence in rats.**
+
+## Part A:
+
+**In one of the studies, 2 out of 13 rats had tumors. Assume there are 20 possible tumor probabilities: 0.025, 0.075, ..., 0.975. Assume that the tumor probability is uniformly distributed. Find the posterior distribution for the tumor probability given the data for this study.**
+
+### **Define the data**:
+
+In the first study, we have 2 rats with tumors out of 13 total. Thus, the data can be represented as:
+
+-   $x_1 = 2$ (number of tumors)
+
+-   $n_1 = 13$ (total number of rats)
+
+This is defined as follows:
+
+```{r}
+#define x1 and n1
+x1 <- 2  # number of rats with tumors
+n1 <- 13  # total number of rats
+```
+
+### **Assume the prior distribution**:
+
+The tumor probability $p$ is uniformly distributed over 20 possible values:
+
+$$p = [0.025, 0.075,...,0.975]$$
+
+Since it's uniformly distributed, the prior probability for each $p$ is the same:
+
+$$P(P_i) = \frac{1}{20} \text{ for each of the 20 possible probabilities}$$
+
+This is defined as follows:
+
+```{r}
+#define values of p
+p_values <- seq(0.025, 0.975, by = 0.05)  # tumor probabilities
+
+#define prior probability function
+prior <- rep(1/length(p_values), length(p_values))  # uniform prior
+
+#view results
+cat('\n P = ', p_values,
+    '\n  ',
+    '\n Prior Probabilities = ', prior)
+```
+
+### **Use the likelihood function**:
+
+The likelihood of observing the data $x_1$ given a tumor probability $p$ follows a binomial distribution:
+
+$$P(x_1|p) = \binom{n_1}{x_1}p^{x_1}(1-p)^{n_1-x_1}$$
+
+I defined this as follows:
+
+```{r}
+#define likelihood function
+likelihood <- dbinom(x1, size = n1, prob = p_values) 
+
+#view results
+cat('Likelihoods: ', likelihood)
+```
+
+### **Compute the posterior distribution**
+
+According to Bayes' Theorem, the posterior probability of $p$ given the data $x_1$ is proportional to the likelihood times the prior:
+
+$$P(p|x_1) \  \alpha \  P(x_1|p)P(p)$$ Since the prior is uniform, the posterior distribution is proportional to the likelihood.
+
+I thus multiplied the likelihood by the prior probabilities and normalised the results by dividing by the sum of all likelihoods to ensure they sum to 1.
+
+```{r}
+#product of likelihood and prior
+unnormalized_posterior <- likelihood * prior
+
+#normalise
+posterior <- unnormalized_posterior / sum(unnormalized_posterior) 
+
+#view result
+cat('Posterior:', posterior)
+```
+
+I plotted this distribution for better understanding:
+
+```{r}
+plot(p_values, posterior, type = "h", col = "blue", lwd = 2, 
+     xlab = "Tumor Probability", ylab = "Posterior Probability",
+     main = "Posterior Distribution (Study 1: 2 out of 13 rats)")
+
+```
+
+**Interpretation**
+
+The graph shows that lower tumor probabilities within the range: $[0.0, 0.4]$ have higher posterior probabilities, with the highest being at around $0.2$. This means that, based on the study, it is more likely that the true tumor probability is low, and with the highest likelihood being at around $20\%$. The concentration of bars at the lower end suggests a higher confidence in lower probabilities.
+
+## Part B:
+
+**Repeat Part a for a second study in which 1 in 18 rats had a tumor.**
+
+### Define the data
+
+In the second study:
+
+-   $x_2 = 1$ (number of tumors)
+
+-   $n_2 = 18$ (number of rats)
+
+I defined this as follows:
+
+```{r}
+#define x2 and n2 
+x2 <- 1  # number of rats with tumors
+n2 <- 18  # total number of rats
+```
+
+### Assume the Prior Distribution
+
+The prior is still uniform over the same 20 possible tumor possibilities, so i used the same prior probabilities computed in part a.
+
+```{r}
+#view prior probabilities
+cat('prior probabilities: ', prior)
+```
+
+### Compute the likelihood for the second study
+
+The likelihood for this study is:
+
+$$
+P(x_2|p) = \binom{n_2}{x_2}p^{x_2}(1-p)^{n_2 - x_2}
+$$
+
+I defined this as follows:
+
+```{r}
+#define the likelihood
+likelihood_2 <- dbinom(x2, size = n2, prob = p_values)
+
+#view result
+cat('likelihood: ', likelihood_2)
+```
+
+### Find the posterior distribution
+
+Again, using Baye's Theorem we compute the posterior probability as:
+
+$$
+P(p|x_2) \ \alpha \ P(x_2|p)P(p)
+$$Since the prior is uniform, the posterior is proportional to the likelihood. I computed the posterior by multiplying the likelihood and prior probabilities, then normalising the result.
+
+```{r}
+#compute posterior
+unnormalized_posterior_2 <- likelihood_2 * prior
+
+#normalise result
+posterior_2 <- unnormalized_posterior_2 / sum(unnormalized_posterior_2)
+
+#view result
+cat('Posterior Probabilities: ', posterior_2)
+```
+
+I then visualised these probabilities as follows:
+
+```{r}
+plot(p_values, posterior_2, type = "h", col = "red", lwd = 2, 
+     xlab = "Tumor Probability", ylab = "Posterior Probability",
+     main = "Posterior Distribution (Study 2: 1 out of 18 rats)")
+
+```
+
+**Interpretation**
+
+The graph shows that lower tumor probabilities within the range: $[0.0, 0.2]$ have higher posterior probabilities, with the highest being at around $0.1$. This means that, based on the study, it is more likely that the true tumor probability is low, and with the highest likelihood being at around $10\%$. The concentration of bars at the lower end suggests a higher confidence in lower probabilities.
+
+These posterior probabilities are comparatively lower than those when we consider tumor probabilities in 2 out of 13 rats, suggesting lower likelihood of a true tumor in this study.
+
+## Part C:
+
+**Parts a and b assumed that each study had a different tumor probability, and that these tumor probabilities were uniformly distributed a priori. Now, assume the tumor probabilities are the same for the two studies, and that this probability has a uniform prior distribution. Find the posterior distribution for the common tumor probability given the combined results from the two studies.**
+
+### Define the combined data
+
+The combined data are:
+
+-   $x_1 = 2, n_1 = 13$ (from the first study)
+
+-   $x_2 = 1, n_2 = 18$ (from the second study)
+
+These are already defined in r in parts a and b.
+
+```{r}
+#View parameters
+cat('\n x1: ', x1,
+    '\n n1: ', n1,
+    '\n x2: ', x2,
+    '\n n2: ', n2)
+```
+
+### Use the binomial likelihood for both studies
+
+The likelihood for the combined data is:
+
+$$
+P(x_1, x_2|p) = P(x_1|p)P(x_2|p) = \binom{n_1}{x_1}p^{x_1}(1-p)^{n_1-x_1} \ \times \ \binom{n_2}{x_2}p^{x_2}(1-p)^{n_2-x_2} 
+$$
+
+I defined this as follows:
+
+```{r}
+#define combined likelihood
+combined_likelihood <- dbinom(x1, size = n1, prob = p_values) * dbinom(x2, size = n2, prob = p_values)
+
+#view results
+cat('Combined Likelihood: ', combined_likelihood)
+```
+
+### Assume the same prior
+
+The priors for $p$ still follow a uniform distribution, thus we use the priors computed in part A.
+
+```{r}
+#view prior probabilites
+cat('prior probabilities: ', prior)
+```
+
+### Find the posterior distribution
+
+The posterior probability for $p$ given the combined data is proportional to the product of the likelihoods from both studies and the prior:
+
+$$P(p|x_1, x_2) \ \alpha \ P(x_1|p)P(x_2|p)P(p)$$
+
+I computed this and normalised the posterior probabilities as follows:
+
+```{r}
+#compute the posterior probabilities
+unnormalized_posterior_combined <- combined_likelihood * prior
+
+#normalised
+posterior_combined <- unnormalized_posterior_combined / sum(unnormalized_posterior_combined)
+
+#view results
+cat('Posterior Probabilities: ', posterior_combined)
+```
+
+I then plotted the posterior probabilities as follows:
+
+```{r}
+plot(p_values, posterior_combined, type = "h", col = "green", lwd = 2, 
+     xlab = "Tumor Probability", ylab = "Posterior Probability",
+     main = "Posterior Distribution (Combined Studies)")
+
+```
+
+**Interpretation**
+
+The graph shows that lower tumor probabilities within the range: $[0.0, 0.2]$ have higher posterior probabilities, with the highest being at around $0.1$. This means that, based on the study, it is more likely that the true tumor probability is low, and with the highest likelihood being at around $10\%$. The concentration of bars at the lower end suggests a higher confidence in lower probabilities.
+
+The posterior probabilities for the combined studies are similar to the second study when we compared tumor probabilities in 1 out of 18 rats, but comparably lower than when we consider them in 2 out of 13 rats.
+
+## Part D:
+
+**Compare the three distributions for Parts a, b, and c. Comment on your results.**
+
+I overlayed the three visualisations of the posterior probabilities to compare them, as follows;
+
+```{r}
+plot(p_values, posterior, type = "l", col = "blue", lwd = 2, 
+     xlab = "Tumor Probability", ylab = "Posterior Probability", 
+     main = "Comparison of Posterior Distributions", ylim = c(0, 0.40))
+lines(p_values, posterior_2, col = "red", lwd = 2)
+lines(p_values, posterior_combined, col = "green", lwd = 2)
+legend("topright", legend = c("Study 1", "Study 2", "Combined"),
+       col = c("blue", "red", "green"), lwd = 2)
+```
+
+**Interpretation**
+
+The comparative graph shows that the posterior probabilities for the combined study lean more towards those of study 2, as compared to those of study 1 which are lower than study 2's. This suggests that Study 2's data provided stronger evidence for lower tumor probabilities.
+
+This likely occurred because Study 2 had fewer observed tumor occurrences compared to Study 1, and when the data from both studies were pooled, the combined analysis gave more weight to the evidence from Study 2, which suggested a lower likelihood of tumors. As a result, the overall posterior shifted towards lower probabilities, reflecting the greater influence of Study 2 in the combined analysis.
+
+------------------------------------------------------------------------
+
+# Question 2
+
+**In an experiment, subjects were given the choice between two gambles:**
+
+**Gamble 1: (in dollars)**
+
+|        |                                  |        |                         |
+|--------|----------------------------------|--------|-------------------------|
+| **A:** | **2500 with a probability 0.33** | **B:** | **2400 with certainty** |
+|        | **2400 with a probability 0.66** |        |                         |
+|        | **0 with a probability 0.01**    |        |                         |
+
+**Suppose that a person is an expected utility maximiser. Set the utility scale so that u(0 dollars) = 0 and u(2500 dollars) = 1. Whether a utility maximizing person would choose Option A or Option B depends on the person's utility for 2400 dollars. For what values of u(2400 dollars) would an expected utility maximiser choose Option A? For what values would an expected utility maximiser choose Option B?**
+
+**Gamble 2: (in dollars)**
+
+|        |                                |        |                                  |
+|--------|--------------------------------|--------|----------------------------------|
+| **A:** | **2500 with probability 0.33** | **B:** | **\$2400 with probability 0.34** |
+|        | **0 with probability 0.67**    |        | **\$0 with probability 0.66**    |
+
+**For what values of u(2400 dollars) would an expected utility maximizer choose Option C? For what values would an expected utility maximizer choose Option D?**
+
+### Gamble 1
+
+**Option A (Gamble with 3 outcomes)**
+
+-   \$2500 with probability 0.33
+
+-   \$2400 with probability 0.66
+
+-   \$0 with probability 0.01
+
+The expected utility of option A is computed as follows:
+
+$$
+E[U(A)] = \sum P \cdot U(x)
+$$
+
+> Where:
+>
+> -   $P$ represents the Probability of each outcome
+>
+> -   $x$ is the amount of money specified
+>
+> -   $U$ represresents the Utility
+
+The expected utility of Option A can is computed as follows:
+
+$$
+E[U(A)] = 0.33 \times U(2500) + 0.66 \times U(2400) + 0.01 \times U(0)
+$$
+
+I defined this as a function as follows:
+
+```{r}
+# Function to calculate the expected utility for Option A in Gamble 1
+expected_utility_A1 <- function(u_2400) {
+  p_2500_A1 <- 0.33
+  p_2400_A1 <- 0.66
+  p_0_A1 <- 0.01
+  
+  # Expected utility of Option A in Gamble 1
+  expected_utility <- p_2500_A1 * u_2500 + p_2400_A1 * u_2400 + p_0_A1 * u_0
+  return(expected_utility)
+}
+```
+
+**Option B (Certainty of 2400)**
+
+The expected utility of Option B is simply:
+
+$$
+E[U(B)] = U(2400)
+$$
+
+I defined this as a function as follows:
+
+```{r}
+# Function to calculate the expected utility for Option B in Gamble 1
+expected_utility_B1 <- function(u_2400) {
+  # Option B has a certainty of $2400
+  expected_utility <- u_2400
+  return(expected_utility)
+}
+```
+
+**Condition to Choose Option A or Option B**
+
+A utility-maximizing person will choose Option A if the expected utility of Option A is greater than the expected utility of Option B, i.e.:
+
+$$E[U(A)] > E[U(B)]$$
+
+Substituting the expressions for $E[U(A)]$ and $E[U(B)]$:
+
+$$0.33 + 0.66 \times U(2400) > U(2400)$$
+
+Simplifying:
+
+$$
+0.33 > U(2400) - 0.66 \times U(2400)\\
+0.33 > 0.34 \times U(2400)\\ 
+U(2400) < \frac{0.33}{0.34} 
+$$
+
+I computed this as follows:
+
+```{r}
+#computation
+result <- 0.33/0.34
+
+#view result
+cat('U(2400): ', result)
+```
+
+Thus if $U(2400) < 0.97$, the person will **choose Option A**. Otherwise they will choose option B.
+
+I computed the full range of choices as follows, using the previously defined functions:
+
+```{r}
+# Define the range of u(2400) values to check
+u_2400_values <- seq(0, 1, by = 0.01)
+
+# Define global values for u_2500 and u_0
+u_2500 <- 1  # Utility of $2500
+u_0 <- 0     # Utility of $0
+
+# Compare the expected utilities for Gamble 1 (Options A and B)
+cat("Gamble 1 Comparison (Option A vs Option B):\n")
+for (u_2400 in u_2400_values) {
+  EU_A1 <- expected_utility_A1(u_2400)
+  EU_B1 <- expected_utility_B1(u_2400)
+  
+  if (EU_A1 > EU_B1) {
+    cat(sprintf("For u(2400) = %.2f, choose Option A (EU_A1 = %.2f, EU_B1 = %.2f)\n", u_2400, EU_A1, EU_B1))
+  } else {
+    cat(sprintf("For u(2400) = %.2f, choose Option B (EU_A1 = %.2f, EU_B1 = %.2f)\n", u_2400, EU_A1, EU_B1))
+  }
+}
+
+```
+
+The results show that for values greater than 0.97, the individual chooses Option B, otherwise they choose option A, as we had computed before.
+
+I then visualised the range of values at with the utility maximising individual will choose option A or option B.
+
+```{r}
+# Create a data frame for plotting
+u_2400_values <- seq(0, 1, by = 0.01)
+EU_A1_values <- sapply(u_2400_values, expected_utility_A1)
+EU_B1_values <- sapply(u_2400_values, expected_utility_B1)
+
+data <- data.frame(
+  u_2400 = u_2400_values,
+  EU_A1 = EU_A1_values,
+  EU_B1 = EU_B1_values,
+  Choice = ifelse(EU_A1_values > EU_B1_values, "Option A", "Option B")
+)
+
+# Create the plot
+ggplot(data, aes(x = u_2400)) +
+  geom_line(aes(y = EU_A1, color = "Option A")) +
+  geom_line(aes(y = EU_B1, color = "Option B")) +
+  geom_ribbon(aes(ymin = pmin(EU_A1, EU_B1), ymax = pmax(EU_A1, EU_B1), fill = Choice), alpha = 0.3) +
+  labs(x = "Utility of $2400", y = "Expected Utility", color = "Option", fill = "Choice") +
+  theme_minimal()
+
+```
+
+**Interpretation**
+
+The point at which the pink and blue lines converge illustrates the value of U(2400) after which the individual will choose option B instead of Option A. This point appears to be around the 0.97 mark on the graph.
+
+### Gamble 2
+
+**Option C (Gamble with 2 Outcomes)**
+
+-   \$2500 with probability 0.33
+
+-   \$0 with probability 0.67
+
+The expected utility of option C is:
+
+$$
+E[U(C)] = 0.33 \times U(2500) + 0.67 \times U(0)
+$$
+
+Given that $U(2500) = 1$ and $U(0) = 0$, this simplifies to:
+
+$$
+E[U(C)] = 0.33
+$$
+
+I defined a function to compute this as follows:
+
+```{r}
+# Function to calculate the expected utility for Option C in Gamble 2
+expected_utility_C2 <- function() {
+  p_2500_C2 <- 0.33
+  p_0_C2 <- 0.67
+  
+  # Expected utility of Option C in Gamble 2
+  expected_utility <- p_2500_C2 * u_2500 + p_0_C2 * u_0
+  return(expected_utility)
+}
+```
+
+**Option D (Gamble with 2 outcomes)**
+
+-   \$2400 with probability 0.34
+
+-   \$0 with probability 0.66
+
+The expected utility of Option D is:
+
+$$
+E[U(D)] = 0.34 \times U(2400)
+$$
+
+I defined a function to compute this as follows:
+
+```{r}
+# Function to calculate the expected utility for Option D in Gamble 2
+expected_utility_D2 <- function(u_2400) {
+  p_2400_D2 <- 0.34
+  p_0_D2 <- 0.66
+  
+  # Expected utility of Option D in Gamble 2
+  expected_utility <- p_2400_D2 * u_2400 + p_0_D2 * u_0
+  return(expected_utility)
+}
+```
+
+**Condition to Choose Option C or Option D**
+
+A utility-maximizing person will choose Option C if:
+
+$$
+E[U(C)] > E[U()D]
+$$
+
+Substituting the expressions for $E[U(C)]$ and $E[U(D)]$:
+
+$$
+0.33 > 0.34 \times U(2400)
+$$
+
+Simplifying:
+
+$$
+U(2400) < \frac{0.33}{0.34}
+$$
+
+I computed this as follows:
+
+```{r}
+#computation
+result <- 0.33/0.34
+
+#view result
+cat('U(2400): ', result)
+```
+
+So if $U(2400) < 0.97$, the person will **choose Option C**. Otherwise, the will choose Option D.
+
+I computed the full range of choices as follows:
+
+```{r}
+# Compare the expected utilities for Gamble 2 (Options C and D)
+cat("\nGamble 2 Comparison (Option C vs Option D):\n")
+EU_C2 <- expected_utility_C2()  # This doesn't depend on u(2400), so we calculate it once
+for (u_2400 in u_2400_values) {
+  EU_D2 <- expected_utility_D2(u_2400)
+  
+  if (EU_C2 > EU_D2) {
+    cat(sprintf("For u(2400) = %.2f, choose Option C (EU_C2 = %.2f, EU_D2 = %.2f)\n", u_2400, EU_C2, EU_D2))
+  } else {
+    cat(sprintf("For u(2400) = %.2f, choose Option D (EU_C2 = %.2f, EU_D2 = %.2f)\n", u_2400, EU_C2, EU_D2))
+  }
+}
+
+```
+
+The results show that for values of U(2400) greater than 0.97, the individual chooses option D, otherwise they choose option C as we had previously computed.
+
+I then visualised the range of utilities at which one would choose option C vs Option D.
+
+```{r}
+# Define the range of u(2400) values
+u_2400_values <- seq(0, 1, by = 0.01)
+
+# Calculate expected utilities for Option C (constant) and Option D (depends on u(2400))
+EU_C2 <- expected_utility_C2()  # This doesn't depend on u(2400), so we calculate it once
+EU_D2_values <- sapply(u_2400_values, expected_utility_D2)
+
+# Create a data frame for plotting
+data_c_d <- data.frame(
+  u_2400 = u_2400_values,
+  EU_C2 = rep(EU_C2, length(u_2400_values)),  # Repeat the constant value for plotting
+  EU_D2 = EU_D2_values,
+  Choice = ifelse(EU_C2 > EU_D2_values, "Option C", "Option D")
+)
+
+# Load ggplot2 package for plotting
+library(ggplot2)
+
+# Create the plot
+ggplot(data_c_d, aes(x = u_2400)) +
+  geom_line(aes(y = EU_C2, color = "Option C")) +
+  geom_line(aes(y = EU_D2, color = "Option D")) +
+  geom_ribbon(aes(ymin = pmin(EU_C2, EU_D2), ymax = pmax(EU_C2, EU_D2), fill = Choice), alpha = 0.3) +
+  labs(x = "Utility of $2400", y = "Expected Utility", color = "Option", fill = "Choice") +
+  theme_minimal() +
+  ggtitle("Expected Utility Comparison: Option C vs Option D")
+
+
+```
+
+**Interpretation**
+
+The graph shows that the point at which the individual will choose option D appears to be when U(2400) is greater than 0.97.

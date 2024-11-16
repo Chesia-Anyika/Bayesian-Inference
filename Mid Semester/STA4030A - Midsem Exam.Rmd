@@ -1,0 +1,343 @@
+---
+title: "STA4030A - Midsem Exam"
+author: "Chesia Anyika"
+date: "2024-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# QUESTION 1:
+
+**The table below is taken from the Hoff text and shows the joint distribution of occupations taken from a 1983 study of social mobility.**
+
++------------------+-------+------------+-----------+-------+--------------+
+| occupation       | Farm  | Operatives | Craftsmen | Sales | Professional |
+|                  |       |            |           |       |              |
+| father/ son      |       |            |           |       |              |
++==================+=======+============+===========+=======+==============+
+| **Farm**         | 0.018 | 0.035      | 0.031     | 0.008 | 0.018        |
++------------------+-------+------------+-----------+-------+--------------+
+| **Operatives**   | 0.002 | 0.112      | 0.064     | 0.032 | 0.069        |
++------------------+-------+------------+-----------+-------+--------------+
+| **Craftmen**     | 0.001 | 0.066      | 0.094     | 0.032 | 0.084        |
++------------------+-------+------------+-----------+-------+--------------+
+| **Sales**        | 0.001 | 0.018      | 0.019     | 0.010 | 0.051        |
++------------------+-------+------------+-----------+-------+--------------+
+| **Professional** | 0.001 | 0.029      | 0.032     | 0.043 | 0.130        |
++------------------+-------+------------+-----------+-------+--------------+
+
+## Part a
+
+**Find the marginal distribution of fathers' occupations. (2 marks)**
+
+To find the marginal distribution of the fathers' occupations, we need to sum the probabilities across each row for each father's occupation, as per the formula:
+
+$$MP = \sum P_{j}$$
+
+> Where:
+>
+> $MP$ represents the Marginal Probability
+>
+> $P_{j}$ represents the joint probability of that row
+
+I computed this as follows
+
+```{r}
+# Create the joint distribution table with row and column names
+joint_table <- matrix(c(0.018, 0.002, 0.001, 0.001, 0.001,
+                        0.035, 0.112, 0.066, 0.018, 0.029,
+                        0.031, 0.064, 0.094, 0.019, 0.032,
+                        0.008, 0.032, 0.032, 0.010, 0.043,
+                        0.018, 0.069, 0.084, 0.051, 0.130),
+                      nrow = 5, byrow = FALSE,
+                      dimnames = list(
+                        father_occupation = c("Farm", "Operatives", "Craftsmen", "Sales", "Professional"),
+                        son_occupation = c("Farm", "Operatives", "Craftsmen", "Sales", "Professional")
+                      ))
+
+# Print the matrix with row and column names
+print(joint_table)
+
+```
+
+```{r}
+# Marginal distribution of fathers' occupations (row sums)
+fathers_marginal <- rowSums(joint_table)
+
+#view results
+print("The Father's marginal probabilities per occupation are:")
+print(fathers_marginal)
+```
+
+The results show that in this study, the most probable occupation for fathers is being an operative, with a probability of $0.279$, and the least probable occupation being a Sales person, with a probability of $0.099$.
+
+## Part b
+
+**Find the marginal distribution of sons' occupations. (2 marks)**
+
+Similarly, to find the marginal distribution of sons' occupations, we sum the probabilities in each column for each son's occupation, using the same formula.
+
+I computed this as follows:
+
+```{r}
+# Marginal distribution of sons' occupations (column sums)
+sons_marginal <- colSums(joint_table)
+
+#view results
+print("The Son's marginal probabilities per occupation are:")
+sons_marginal
+
+```
+
+The results show that in the study, the most probable occupation for son's is being in the professional field, with a probability of $0.352$, and the least probable is being in Sales, with a probability of $0.125$.
+
+## Part c
+
+**Find the conditional distribution of the son's occupation given that the father is a farmer. (2 marks)**
+
+To find the conditional distribution of the son's occupation given the father is a farmer, we divide each entry in the "Farm" row by the marginal probability of the father being a farmer, as per the formula:
+
+$$P(\text{Son's Occupation | Father is a farmer}) = \frac{P(\text{Son's occupation and father is a farmer})}{P(\text{Father is a farmer})}$$
+
+Using the marginal probability of the father being a farmer as $0.110$, I computed this as follows:
+
+```{r}
+# Conditional distribution of son's occupation given father is a farmer
+father_farm <- joint_table[1, ] # corresponds to first row of father's occupation as a farmer
+conditional_son_given_father_farm <- father_farm / fathers_marginal[1] # MP of 0.110
+
+#View results
+print("conditional distributionof Son's Occupation Given Father is a Farmer")
+print(conditional_son_given_father_farm)
+```
+
+The results show that son's of farmers are most likely to be in Sales, with a probability of $0.727$, and least likely to be Farmers of in Professional Fields, both with a probability of $0.164$.
+
+## Part d
+
+**Find the conditional distribution of the father's occupation given that the son is a farmer. (2 marks)**
+
+```{r}
+# Conditional distribution of father's occupation given son is a farmer
+son_farm <- joint_table[, 1]  # First column corresponds to son's occupation as farmer
+conditional_father_given_son_farm <- son_farm / sons_marginal[1] #MP of 0.023
+
+#view results
+print("Conditional distribution of fathers occupation given son is a farmer")
+print(conditional_father_given_son_farm)
+
+```
+
+The results show that the fathers of farmers are most likely to be farmers themselves, with a probability of $0.783$, and least likely to be in sales, in a professional field or craftsmen each with a probability of $0.043$.
+
+## Part e
+
+**Comment on these results. What do they say about changes in farming in the population from which these data are drawn? (2 marks)**
+
+-   From the marginal distributions, we can see that farming as both a father's and son's occupation has a relatively low probability (0.110 for fathers and 0.023 for sons). This suggests that farming is not a dominant occupation in this population and has even less prevalence among sons compared to fathers.
+-   The conditional distributions show that if the father is a farmer, the son is most likely to become an operative or craftsman, indicating a shift away from farming in subsequent generations.
+-   The conditional distribution of the father's occupation given the son is a farmer reveals that most sons who become farmers are born to farmers, reinforcing that the transition into farming is less likely from other occupations.
+
+This could indicate that farming is becoming less common or less attractive as a career choice, with many sons moving into other professions.
+
+# Question 2
+
+Times were recorded at which vehicles passed a fixed point on the M1 motorway in Bedfordshire, England on March 23, 1985.2 The total time was broken into 21 intervals of length 15 seconds. The number of cars passing in each interval was counted.
+
+The result was: 2, 2, 1, 1, 0, 4, 3, 0, 2,1, 1, 1, 4, 0, 2, 2, 3, 2, 4, 3, 2. This can be summarized in the following table, that shows 3 intervals with zero cars, 5 intervals with 1 car, 7 intervals with 2 cars, 3 intervals with 3 cars and 3 intervals with 4 cars.
+
+| Number of Cars | Number of Occurrences |
+|----------------|-----------------------|
+| 0              | 3                     |
+| 1              | 5                     |
+| 2              | 7                     |
+| 3              | 3                     |
+| 4              | 3                     |
+| 5              | 0                     |
+
+## Part a
+
+**Do you think a Poisson distribution provides a good model for the count data? Justify your answer. (3 marks)** The Poisson distribution is often used to model count data where events (e.g., cars passing) occur independently and at a constant average rate in fixed intervals of time. To determine if a Poisson distribution is a good model, we can check:
+
+-   **Mean and Variance Comparison:**
+
+For a Poisson distribution, the mean and variance should be approximately equal. To compute these I used the fomulas:
+
+$$\text{Mean} (\mu) = \frac{\sum(\text{Number of cars}) \times (\text{Number of Occurences})}{\text{Total Intervals}}$$
+
+$$\text{Variance} = \frac{\sum(\text{Number of cars} - \mu^2) \times (\text{Number of Occurences})}{\text{Total Intervals}}
+$$
+
+I computed this as follows:
+
+**Step 1: Create the data for the number of cars and occurrences.**
+
+```{r}
+#Define data
+cars <- c(0, 1, 2, 3, 4)
+occurrences <- c(3, 5, 7, 3, 3)
+total_intervals <- sum(occurrences) # Total number of intervals
+
+cat('\n cars: ', cars,
+    '\n occurrences: ', occurrences,
+    '\n total intervals: ',total_intervals)
+```
+
+**Step 2: Compute the Mean**
+
+```{r}
+# Compute mean
+mean_cars <- sum(cars * occurrences) / total_intervals
+mean_cars
+
+```
+
+**Step 3: Compute the Variance**
+
+```{r}
+# Compute variance
+variance_cars <- sum((cars - mean_cars)^2 * occurrences) / total_intervals
+variance_cars
+
+```
+
+**Step 4: Compare the Mean and Variance**
+
+```{r}
+# Check if the mean and variance are approximately equal
+cat('\n Mean: ', mean_cars, 
+    '\n Variance: ', variance_cars)
+
+```
+
+Since the mean $1.90$ and variance $1.50$ are relatively close, the Poisson distribution appears to provide a reasonable fit. The slight difference between the mean and variance may suggest some minor deviation from the ideal Poisson model, but overall, it seems appropriate.
+
+## Part b
+
+**Assume that Λ, the rate parameter of the Poisson distribution for counts (and the inverse of the mean of the exponential distribution for interarrival times), has a discrete uniform prior distribution on 20 equally spaced values between (0.2, 0.4, ..., 3.8, 4.0) cars per 15- second interval. Find the posterior distribution of Λ. (8 marks)**
+
+**Step 1: Define the discrete uniform prior for** $\Lambda$
+
+Here, we assume $\Lambda$ follows a discrete uniform prior on 20 equally spaced values between 0.2 and 4.0.
+
+The prior for each $\Lambda_i$ is
+
+$$
+P(\Lambda_i) = \frac{1}{20} \ \ \ \ \ \text{for each }\Lambda_i
+$$
+
+> Where:
+>
+> $\Lambda_i \in [0.2, 0.4, ..., 4.0]$
+
+I defined this as follows:
+
+```{r}
+# Prior values for Lambda
+lambda_values <- seq(0.2, 4.0, by = 0.2)
+prior <- rep(1 / length(lambda_values), length(lambda_values)) # Uniform prior
+
+#view results
+prior
+```
+
+**Step 2: Compute the Likelihood of observing the data for each** $\Lambda$
+
+We use the likelihood to update the prior and get the posterior.
+
+The likelihood of observing the data under a Poisson distribution is given by:
+
+$$L(\Lambda) = \prod^{21}_{i=1}\frac{e^{-\Lambda}\Lambda^{xi}}{xi!}$$
+
+> Where:
+>
+> $x_i$ is the observed count in each interval.
+
+I computed this as follows:
+
+```{r}
+# Observed data (number of cars)
+data <- c(2, 2, 1, 1, 0, 4, 3, 0, 2, 1, 1, 1, 4, 0, 2, 2, 3, 2, 4, 3, 2)
+
+# Compute the likelihood for each lambda value
+likelihood <- sapply(lambda_values, function(lambda) {
+  prod(dpois(data, lambda)) # Poisson probability mass function
+})
+
+#view results
+likelihood
+```
+
+**Step 3: Compute the posterior by multiplying prior and likelihood, then normalise**
+
+We use Baye's Theorem to compute the posterior, as per the formula:
+
+$$
+P(\Lambda|\text{data})\ \  \alpha \  L(\Lambda)P(\Lambda)
+$$
+
+Since the prior is uniform, we can focus on calculating the likelihood for each $\Lambda_i$​, then normalize the posterior to sum to 1.
+
+I computed this as follows:
+
+```{r}
+# Posterior (not normalized)
+posterior_unnormalized <- likelihood * prior
+
+# Normalize the posterior to sum to 1
+posterior <- posterior_unnormalized / sum(posterior_unnormalized)
+
+#view results
+posterior
+
+```
+
+## Part C
+
+**Find the posterior mean and standard deviation of Λ. (5 marks)**
+
+**Step 1: Compute the posterior mean of** $\Lambda$
+
+The formula for this is:
+
+$$
+E[\Lambda|\text{data}] = \sum_{\Lambda_i}P(\Lambda_i|\text{data})
+$$
+
+I computed this as follows:
+
+```{r}
+# Posterior mean of Lambda
+posterior_mean <- sum(lambda_values * posterior)
+
+#View result
+posterior_mean
+
+```
+
+**Step 2: Compute the posterior variance and standard deviation.**
+
+$$Var(\Lambda|\text{data}) = \sum_{\Lambda_i}( \Lambda_i -E[\Lambda|\text{data}])^2P(\Lambda_i|\text{data})$$
+
+```{r}
+# Posterior variance of Lambda
+posterior_variance <- sum((lambda_values - posterior_mean)^2 * posterior)
+posterior_sd <- sqrt(posterior_variance)
+
+#View results
+posterior_sd
+
+```
+
+**d. Discuss what your results mean in terms of traffic on this motorway. (4 marks)**
+
+-   The posterior mean $\Lambda = 1.95$ is close to the observed mean, which is approximately $1.9$. This indicates that the traffic flow on the motorway is well-described by the Poisson process with that rate.
+
+-   A standard deviation of $0.305$ for $\Lambda$ indicates the uncertainty in the estimate of the rate parameter of the Poisson distribution. The value of $0.305$ is relatively small compared to the posterior mean, which implies the estimate of $\Lambda$ has a fairly high level of precision. Thus we have a high confidence in our estimate $\Lambda$.
+
+-   **Steady Flow**: The traffic on this motorway was moderately busy during the recorded intervals, with an average of about 1.9 cars passing every 15 seconds. This suggests that the motorway is functioning under typical conditions, without major congestion or empty stretches.
+
+-   **Predictable Traffic**: The small variation in the estimate of $\Lambda$ (due to the small standard deviation) means that this traffic pattern is quite consistent, with few deviations from the mean rate of cars passing the observation point.

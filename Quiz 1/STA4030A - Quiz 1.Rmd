@@ -1,0 +1,548 @@
+---
+title: "STA4030A - Quiz 1"
+author: "Chesia Anyika"
+date: "2024-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1.0 Question 1
+
+**Marjorie is worried about whether it is safe to visit a vulnerable relative during a pandemic. She is considering whether to take an at-home test for the virus before visiting her relative. Assume the test has sensitivity 85% and specificity 92%. That is, the probability that the test will be positive is about 85% if an individual is infected with the virus, and the probability that test will be negative is about 92% if an individual is not infected.**
+
+------------------------------------------------------------------------
+
+**a. Assume that about 2 in every 1,000 people in the population are currently infected. What is the posterior probability that an individual with a positive test has the disease?**
+
+## 1.1 Bayes' Theorem
+
+The **posterior probability** is that an individual has the disease a positive test. The posterior probability can be computed using **Bayes' Theorem**, represented as follows:
+
+$$
+P(V|P) = \frac{P(V) \cdot P(P|V)}{P(P)}
+$$
+
+> Where:
+>
+> $P(V)$ is the probability of having the virus
+>
+> $P(P)$ is the probability of a positive test
+>
+> $P(P|V)$ is the Sensitivity, the probability of a positive test given having the virus.
+>
+> $P(V|P)$ is the posterior probability
+
+The Probability of a positive test $P(P)$ can further be computed as follows:
+
+$$
+P(P) = P(V) \cdot P(P|V) + P(¬V) \cdot P(P¬V)
+$$
+
+> Where
+>
+> $P(¬V)$ is the probability of not having the virus.
+
+## 1.2 Sensitivity and Specificity
+
+The term **Sensitivity** represents the test's true positive rate, and is the parameter $P(P|V)$.
+
+The term **Specificity** represents the test's true negative rate, and is the parameter $P(N|¬V)$. It can be used to compute the **False Positive Rate (FPR)** as follows:
+
+$$
+P(P|¬V) = 1 - P(N|¬V)
+$$
+
+## 1.3 Definition of Parameters
+
+I defined my parameters as follows:
+
+```{r}
+#define my parameters
+prior <- 2/1000 #P(V)
+prior.neg <- 1- prior #P(¬V)
+
+sens <- 0.85 #P(P|V)
+spec <- 0.92 #P(N|¬V)
+
+FPR <- 1 - spec #P(P|¬V)
+
+pos <- (sens*prior)+(FPR*prior.neg) #P(P)
+
+#Paste results
+cat('\n Prior Probability: ', prior,
+    '\n Not Infected: ', prior.neg,
+    '\n Sensitivity: ', sens,
+    '\n Specificity: ', spec,
+    '\n False Positive Rate: ', FPR,
+    '\n Probability of Positive result: ', pos)
+```
+
+## 1.4 Computation
+
+I then computed the prior probability as per the Bayes' Theorem Formula as follows:
+
+```{r}
+# Bayes' Theorem: Posterior probability P(V|P)
+post1 <- (sens*prior)/ pos
+
+#View result
+cat('Posterior Probability: ', post1)
+```
+
+The probability of having the disease given a positive test result is:
+
+$$
+P(V|P) = 0.0208 = 2.08\%
+$$
+
+------------------------------------------------------------------------
+
+**b. Suppose case counts have decreased substantially to about 15 in 100,000. What is the posterior probability that an individual with a positive test has the disease?**
+
+I computed the new posterior probabiltiy using the same bayes' formula as defined above, with the new prior probability defined as:
+
+$$P(V) = \frac{15}{100000}
+$$
+
+This is computed as follows:
+
+```{r}
+#define new parameters
+prior <- 15/100000 #P(V)
+prior.neg <- 1- prior #P(¬V)
+
+pos <- (sens*prior)+(FPR*prior.neg) #P(P)
+
+#Paste results
+cat('\n Prior Probability: ', prior,
+    '\n Not Infected: ', prior.neg,
+    '\n Sensitivity: ', sens,
+    '\n Specificity: ', spec,
+    '\n False Positive Rate: ', FPR,
+    '\n Probability of Positive result: ', pos)
+```
+
+```{r}
+# Bayes' Theorem: Posterior probability P(V|P)
+post2 <- (sens*prior)/ pos
+
+#View result
+cat('Posterior Probability: ', post2)
+```
+
+The probability of having the disease given a positive test result is:
+
+$$
+P(V) = 0.00159 = 0.159\%
+$$
+
+------------------------------------------------------------------------
+
+**c. Comment on your results.**
+
+When the prior probability is reduced from $\frac{2}{1000}$ to $\frac{15}{100000}$ , the overall posterior probability decreases, even though the test's sensitivity, specificity, and false positive rate remain unchanged. This occurs because the prior probability reflects the base rate or prevalence of the condition in the population, which plays a crucial role in determining the posterior probability. Bayes' Theorem shows that the posterior probability is directly influenced by the prior probability. When the prior is lower, the probability of having the disease before considering the test result is lower, leading to a lower posterior probability, even with the same test characteristics.
+
+In other words, if a condition is rarer (i.e., the prior probability is small), even a positive test result may not provide a high level of confidence that an individual truly has the disease, because the overall likelihood of being infected is already low. The test's sensitivity and specificity only adjust how likely the test result is to reflect reality, but the initial assumption about how common the condition is (the prior probability) still heavily influences the outcome. This highlights the importance of considering the prevalence of the condition when interpreting diagnostic test results.
+
+# 2.0 Question 2
+
+Assume the following losses for Marjorie:
+
+− Visit relative, not infected loss = 0
+
+− Visit relative, infected loss = 100
+
+− Does not visit relative, not infected loss = 15
+
+− Does not visit relative, infected loss = 5
+
+Suppose Marjorie is deciding whether to visit her relative and if so whether to test the disease before visiting. If the prior probability that Marjorie has the disease is 200 in 100,000, find the policy that minimizes expected loss. That is, given each of the possible test results, should Marjorie visit her relative? Find the EVSI. Repeat for a prior probability of 15 in 100,000. Discuss.
+
+## 2.1 Expected Loss
+
+For each of the possible test outcomes (positive or negative), we compute the **expected loss** based on whether Marjorie chooses to visit or not as follows:
+
+$$\text{Expected Loss (Visit)} = P(V) \cdot \text{Loss(Visit, V)} + P(¬V) \cdot \text{Loss(Visit, ¬V)} \\
+\text{Expected Loss(¬Visit)} = P(V) \cdot \text{Loss(¬Visit, V)} + P(¬V) \cdot\text{(¬Visit, ¬V)}$$
+
+### 2.1.1 Prior = 200/100000
+
+Given $P(V)=\frac{200}{100000}$ , I defined my parameters as follows:
+
+```{r}
+#define my parameters
+prior1 <- 200/100000 #P(V)
+prior.neg1 <- 1-prior1 #(P¬V)
+
+Loss1 <- 100 #Loss(Visit, V)
+Loss2 <- 0 #Loss(Visit, ¬V)
+Loss3 <- 5 #Loss(¬Visit, V)
+Loss4 <- 15 #Loss(¬Visit, ¬V)
+
+#View results
+cat('\n Prior Probability: ', prior1,
+    '\n Not Infected: ', prior.neg1,
+    '\n Loss(Visit, V): ', Loss1,
+    '\n Loss(Visit, ¬V): ', Loss2,
+    '\n Loss(¬Visit, V): ', Loss3,
+    '\n Loss(¬Visit, ¬V): ', Loss4)
+```
+
+I then computed the Expected Losses as per the defined formulas:
+
+```{r}
+#Expected Loss for Visit
+EL.V1 <- (prior1*Loss1) + (prior.neg1*Loss2)
+
+#Expected Loss for No Visit
+EL.N1 <- (prior1*Loss3) + (prior1*Loss4)
+
+#View results
+cat('\n Expected Loss (Visit): ', EL.V1,
+    '\n Expected Loss (No Visit): ', EL.N1)
+```
+
+The expected loss of a visit is $0.2$, while that of no visit is $0.04$. Thus, it is better for Marjorie **not to visit her relative** as this option has a lower computed loss.
+
+### 2.1.2 Prior = 15/100000
+
+Given $P(V) = \frac{15}{100000}$, I defined my parameters as follows:
+
+```{r}
+#define my parameters
+prior2 <- 15/100000 #P(V)
+prior.neg2 <- 1-prior2 #(P¬V)
+
+Loss1 <- 100 #Loss(Visit, V)
+Loss2 <- 0 #Loss(Visit, ¬V)
+Loss3 <- 5 #Loss(¬Visit, V)
+Loss4 <- 15 #Loss(¬Visit, ¬V)
+
+#View results
+cat('\n Prior Probability: ', prior2,
+    '\n Not Infected: ', prior.neg2,
+    '\n Loss(Visit, V): ', Loss1,
+    '\n Loss(Visit, ¬V): ', Loss2,
+    '\n Loss(¬Visit, V): ', Loss3,
+    '\n Loss(¬Visit, ¬V): ', Loss4)
+```
+
+I then computed the expected losses as per the defined formulas:
+
+```{r}
+#Expected Loss for Visit
+EL.V2 <- (prior2*Loss1) + (prior.neg2*Loss2)
+
+#Expected Loss for No Visit
+EL.N2 <- (prior2*Loss3) + (prior2*Loss4)
+
+#View results
+cat('\n Expected Loss (Visit): ', EL.V2,
+    '\n Expected Loss (No Visit): ', EL.N2)
+```
+
+The expected loss of a visit is $0.015$, while that of no visit is $0.003$. Thus Marjorie should consider not visiting her aunt as this outcome has less potential loss, however the potential losses of both a visit and no visit are **significantly lower than those computed when** $P(V) = \frac{200}{100000}$ .
+
+## 2.2 EVSI
+
+The **Expected Value of Sample Information (EVSI)** is the difference between the expected loss without the test (based only on the prior) and the expected loss with the test, represented as:
+
+$$\text{EVSI} = \text{Expected Loss without Test} - \text{Expected Loss with Test}$$
+
+### 2.2.1 Prior = 200/100000
+
+#### Expected Loss Without Test
+
+This has already been calculated, and can be defined as follows:
+
+```{r}
+#View computed expected losses
+cat('\n Expected Loss (Visit): ', EL.V1,
+    '\n Expected Loss (No Visit): ', EL.N1)
+```
+
+We use the minimum value of the two, thus our ELWOT is:
+
+```{r}
+#get minimum value
+ELWOT.1 <- min(EL.V1, EL.N1)
+
+#view result
+cat('Expected Loss Without Test: ', ELWOT.1)
+```
+
+#### Expected Loss With Test
+
+To compute this, we need to combine the test results with the corresponding probabilities and losses.
+
+First, I computed the probability of test outcomes for both the positive and negative tests as per the formula:
+
+$$
+P(P) = P(V) \cdot P(P|V) + P(¬V) \cdot [1-P(N|¬V)]\\P(N) = 1 - P(P)
+$$This is computed as follows:
+
+```{r}
+#compute positive test probability
+PT <- (prior1*sens)+(prior.neg1*(1-spec))
+
+#compute negative test probability
+NT  <- 1-PT
+
+#View results
+cat('\n Positive Test: ', PT,
+    '\n Negative test: ', NT)
+```
+
+Next, I computed the posterior probability given the prior probability of $P(V) = \frac{200}{100000}$, as follows:
+
+```{r}
+# Bayes' Theorem: Posterior probability 
+post.pos1 <- (sens*prior1)/ PT #P(V|P)
+post.neg1 <- (1-sens)*prior1 /NT #P(V|N)
+
+#View result
+cat('\n Positive Posterior Probability: ', post.pos1,
+    '\n Negative Posterior Probability: ', post.neg1)
+```
+
+Next, i computed the expected loss for both decisions (visit or not) using the posterior probability of being infected and having a positive test $P(V|P$), and a negative test $P(V|N)$.
+
+```{r}
+#Expected Loss(Visit, Negative)
+EL.VP <- (post.pos1*Loss1) + ((1-post.pos1)*Loss2)
+
+#Expected Loss(No Visit, Negative)
+EL.NVP <- (post.pos1*Loss3) + ((1-post.pos1)*Loss4)
+
+#Expected Loss(Visit, Negative)
+EL.VN <- (post.neg1*Loss1) + ((1-post.neg1)*Loss2)
+
+#Expected Loss(No Visit, Negative)
+EL.NVN <- (post.neg1*Loss3) + ((1-post.neg1)*Loss4)
+
+#View computed expected losses
+cat('\n Expected Loss (Visit, Positive): ', EL.VP,
+    '\n Expected Loss (No Visit, Positive): ', EL.NVP,
+    '\n Expected Loss (Visit, Negative): ', EL.VN,
+    '\n Expected Loss (No Visit, Negative): ', EL.NVN)
+```
+
+I then considered the minimum of the two values for the positive and negative tests respectively, as follows:
+
+```{r}
+#minimum of expected values
+ELP <- min(EL.VP, EL.NVP)
+ELN <- min(EL.VN, EL.NVN)
+
+#view results
+cat('\n Expected Loss Positive Test: ', ELP,
+    '\n Expected Loss Negative Test: ', ELN)
+```
+
+Finally, i computed the weighted expected loss across both test outcomes, as per the formula:
+
+$$
+\text{Expected Loss With Test} = P(\text{Positive}) \cdot \min(\text{Expected Loss (Visit | Positive)}, \text{Expected Loss (No Visit | Positive)}) + P(\text{Negative}) \cdot \min(\text{Expected Loss (Visit | Negative)}, \text{Expected Loss (No Visit | Negative)})
+$$
+
+```{r}
+# Compute Expected Loss With Test
+ELWT.1 <- (PT * ELP) + (NT * ELN)
+
+#View result
+cat('Expected Loss With Test: ', ELWT.1)
+```
+
+Finally, we compute the **EVSI** as per the previously defined formula. If the EVSI is positive, it means that taking the test reduces the expected loss, making it worthwhile for Marjorie to take the test before making her decision.
+
+```{r}
+#Compute EVSI
+EVSI.1 = ELWOT.1-ELWT.1
+
+#View result
+cat('EVSI: ', EVSI.1)
+```
+
+The computed **EVSI** $= -0.16$, which is a negative value. This suggests that taking the test does not reduce Marjorie,s expected loss, thus would not be worthwhile to consider in making her decision.
+
+### 2.2.2 Prior = 15/100000
+
+#### Expected Loss Without Test
+
+This has already been calculated, and can be defined as follows:
+
+```{r}
+#View computed expected losses
+cat('\n Expected Loss (Visit): ', EL.V2,
+    '\n Expected Loss (No Visit): ', EL.N2)
+```
+
+We use the minimum value of the two, thus our ELWOT is:
+
+```{r}
+#get minimum value
+ELWOT.2 <- min(EL.V2, EL.N2)
+
+#view result
+cat('Expected Loss Without Test: ', ELWOT.2)
+```
+
+#### Expected Loss With Test
+
+To compute this, we need to combine the test results with the corresponding probabilities and losses.
+
+First, I computed the probability of test outcomes for both the positive and negative tests as per the formula:
+
+$$
+P(P) = P(V) \cdot P(P|V) + P(¬V) \cdot [1-P(N|¬V)]\\P(N) = 1 - P(P)
+$$This is computed as follows:
+
+```{r}
+#compute positive test probability
+PT <- (prior2*sens)+(prior.neg2*(1-spec))
+
+#compute negative test probability
+NT  <- 1-PT
+
+#View results
+cat('\n Positive Test: ', PT,
+    '\n Negative test: ', NT)
+```
+
+Next, I computed the posterior probability given the prior probability of $P(V) = \frac{200}{100000}$, as follows:
+
+```{r}
+# Bayes' Theorem: Posterior probability 
+post.pos2 <- (sens*prior2)/ PT #P(V|P)
+post.neg2 <- (1-sens)*prior2 /NT #P(V|N)
+
+#View result
+cat('\n Positive Posterior Probability: ', post.pos2,
+    '\n Negative Posterior Probability: ', post.neg2)
+```
+
+Next, i computed the expected loss for both decisions (visit or not) using the posterior probability of being infected and having a positive test $P(V|P$), and a negative test $P(V|N)$.
+
+```{r}
+#Expected Loss(Visit, Negative)
+EL.VP <- (post.pos2*Loss1) + ((1-post.pos2)*Loss2)
+
+#Expected Loss(No Visit, Negative)
+EL.NVP <- (post.pos2*Loss3) + ((1-post.pos2)*Loss4)
+
+#Expected Loss(Visit, Negative)
+EL.VN <- (post.neg2*Loss1) + ((1-post.neg2)*Loss2)
+
+#Expected Loss(No Visit, Negative)
+EL.NVN <- (post.neg2*Loss3) + ((1-post.neg2)*Loss4)
+
+#View computed expected losses
+cat('\n Expected Loss (Visit, Positive): ', EL.VP,
+    '\n Expected Loss (No Visit, Positive): ', EL.NVP,
+    '\n Expected Loss (Visit, Negative): ', EL.VN,
+    '\n Expected Loss (No Visit, Negative): ', EL.NVN)
+```
+
+I then considered the minimum of the two values for the positive and negative tests respectively, as follows:
+
+```{r}
+#minimum of expected values
+ELP <- min(EL.VP, EL.NVP)
+ELN <- min(EL.VN, EL.NVN)
+
+#view results
+cat('\n Expected Loss Positive Test: ', ELP,
+    '\n Expected Loss Negative Test: ', ELN)
+```
+
+Finally, i computed the weighted expected loss across both test outcomes, as per the formula:
+
+$$
+\text{Expected Loss With Test} = P(\text{Positive}) \cdot \min(\text{Expected Loss (Visit | Positive)}, \text{Expected Loss (No Visit | Positive)}) + P(\text{Negative}) \cdot \min(\text{Expected Loss (Visit | Negative)}, \text{Expected Loss (No Visit | Negative)})
+$$
+
+```{r}
+# Compute Expected Loss With Test
+ELWT.2 <- (PT * ELP) + (NT * ELN)
+
+#View result
+cat('Expected Loss With Test: ', ELWT.2)
+```
+
+Finally, we compute the **EVSI** as per the previously defined formula. If the EVSI is positive, it means that taking the test reduces the expected loss, making it worthwhile for Marjorie to take the test before making her decision.
+
+```{r}
+#Compute EVSI
+EVSI.2 = ELWOT.2-ELWT.2
+
+#View result
+cat('EVSI: ', EVSI.2)
+```
+
+The computed **EVSI** $= -0.012$, which is a negative value. This suggests that taking the test does not reduce Marjorie,s expected loss, thus would not be worthwhile to consider in making her decision. This is a comparatively smaller value than the the first computed EVSI of $-0.16$, thus it is more worthwhile for Marjorie to take the test before visiting her relative in the case of the prior probability being lower, at $15/100000$.
+
+In general, the EVSI is higher (in absolute terms) when the prior probability of infection is lower, suggesting that the test provides more value in reducing expected loss when the infection risk is low. This means that even though the test might not always reduce expected loss, it becomes more beneficial when the infection probability is lower.
+
+------------------------------------------------------------------------
+
+# 3.0 Question 3
+
+**For the decision of whether Marjorie should visit her relative, find the range of prior probabilities for which taking the at-home test results in lower expected loss than ignoring or not taking the test (assuming the test is free). Discuss your results**
+
+To compute this I defined a function that computes the
+
+1.  Expected Loss With test
+2.  Expected Loss without test
+
+This is then used to find the range of prior probabilities at which it would be beneficial to take the test, as per the comparison $\text{Expected Loss With test} < \text{Expected Loss Without Test}$.
+
+```{r}
+# Function to compute expected loss with and without the test
+compute_losses <- function(prior) {
+  prior.neg <- 1 - prior
+  
+  # Compute probabilities of test outcomes
+  PT <- (prior * sens) + (prior.neg * (1 - spec))  # Probability of positive test
+  NT <- 1 - PT  # Probability of negative test
+  
+  # Compute posterior probabilities
+  post.pos <- (sens * prior) / PT
+  post.neg <- (1 - sens) * prior / NT
+  
+  # Expected losses given positive and negative tests
+  EL.VP <- (post.pos * Loss1) + ((1 - post.pos) * Loss2)  # Expected Loss(Visit | Positive)
+  EL.NVP <- (post.pos * Loss3) + ((1 - post.pos) * Loss4)  # Expected Loss(No Visit | Positive)
+  
+  EL.VN <- (post.neg * Loss1) + ((1 - post.neg) * Loss2)  # Expected Loss(Visit | Negative)
+  EL.NVN <- (post.neg * Loss3) + ((1 - post.neg) * Loss4)  # Expected Loss(No Visit | Negative)
+  
+  # Minimum expected losses for each test result
+  ELP <- min(EL.VP, EL.NVP)  # Minimum expected loss given positive test
+  ELN <- min(EL.VN, EL.NVN)  # Minimum expected loss given negative test
+  
+  # Compute Expected Loss With Test
+  ELWT <- PT * ELP + NT * ELN
+  
+  # Compute Expected Loss Without Test
+  ELWOT <- min((prior * Loss1) + (prior.neg * Loss2), (prior * Loss3) + (prior.neg * Loss4))
+  
+  return(c(ELWT, ELWOT))
+}
+
+# Test range of prior probabilities
+prior_values <- seq(0.00001, 0.01, by = 0.00001)  # Small range of prior probabilities
+results <- sapply(prior_values, compute_losses)
+
+# Identify the range where ELWT < ELWOT
+better_test <- results[1, ] < results[2, ]
+range_better_test <- prior_values[better_test]
+
+# View results
+cat('\n Range of Prior Probabilities where Test is Better: ', range_better_test[1], ' to ', range_better_test[length(range_better_test)])
+
+```
+
+Thus, the range of prior probabilities where it is better to take the test is $[9e^{05}, 0.00995]$.

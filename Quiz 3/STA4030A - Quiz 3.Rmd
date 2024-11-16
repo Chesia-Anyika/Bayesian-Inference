@@ -1,0 +1,427 @@
+---
+title: "STA4030A - Quiz 3"
+author: "Chesia Anyika"
+date: "2024-10-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **Question 1**
+
+**In previous years, students in this course collected data on people's preferences in the two Allais Gambles.**
+
+|               |                                  |        |                                  |
+|---------------|----------------------------------|--------|----------------------------------|
+| **Gamble 1:** |                                  |        |                                  |
+| **A:**        | **\$2500 with probability 0.33** | **B:** | **\$2400 with certainty**        |
+|               | **\$2400 with probability 0.66** |        |                                  |
+|               | **\$0 with probability 0.01**    |        |                                  |
+| **Gamble 2:** |                                  |        |                                  |
+| **C:**        | **\$2500 with probability 0.33** | **D:** | **\$2400 with probability 0.34** |
+|               | **\$0 with probability 0.67**    |        | **\$0 with probability 0.66**    |
+
+## Problem Setup
+
+**For this problem, we will assume that responses are independent and identically distributed, and the probability is 𝜃 that a person chooses both B in the first gamble and C in the second gamble.**
+
+We're given that:
+
+1.  A person's probability of choosing both B in Gamble 1 and C in Gamble 2 is denoted by $\theta$
+
+2.  We assume a prior distribution for $\theta ~ Beta(1,3)$
+
+3.  In a 2009 survey, 19 out of 47 respondents chose both B and C.
+
+The Beta distribution with parameters $\alpha$ and $\beta$ has the probability density function:
+
+$$
+f(\theta) = \frac{\theta^{\alpha - 1}(1-\theta)^{\beta-1}}{B(\alpha, \beta)}
+$$
+
+> Where:
+>
+> $B(\alpha, \beta)$ is the Beta function, which normalises the distribution
+
+For the libraries, I used `stats` (built-in in R) for calculating Beta distribution parameters, and `ggplot2` for plotting.
+
+```{r}
+# Required libraries
+library(ggplot2)
+```
+
+## Part A
+
+**a. Assume that the prior distribution for 𝜃 is Beta(1, 3).**
+
+**i. Find the prior mean and standard deviation for 𝜃.**
+
+The mean $\mathbb{E}[\theta]$ is given by:
+
+$$
+\mathbb{E}[\theta] = \frac{\alpha}{\alpha + \beta}
+$$
+
+The Variance $\text{Var}(\theta)$ is:
+
+$$
+\text{Var}(\theta) = \frac{\alpha \beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}
+$$
+
+The standard deviation $\sigma(\theta)$ is $\sqrt{Var(\theta)}$
+
+I computed these in R as follows:
+
+```{r}
+# Prior parameters
+alpha_prior <- 1
+beta_prior <- 3
+
+# Calculations
+prior_mean <- alpha_prior / (alpha_prior + beta_prior)
+prior_sd <- sqrt((alpha_prior * beta_prior) / ((alpha_prior + beta_prior)^2 * (alpha_prior + beta_prior + 1)))
+
+# Print results
+cat("Prior Mean:", prior_mean, "\n")
+cat("Prior SD:", prior_sd, "\n")
+
+```
+
+**ii. Find a 95% symmetric tail area credible interval for the prior probability that a person would choose B and C.**
+
+A 95% symmetric tail credible interval for $\theta$ an be found by calculating the 2.5th and 97.5th percentiles of a $\text{Beta}(1,3)$ distribution. Let's denote these percentiles as $\theta_{0.025}$ and $\theta_{0.975}$.
+
+We can compute these values using Beta quantiles:
+
+-   $\theta_{0.025} = \text{Beta quantile}(0.025, 1, 3)$
+
+-   $\theta_{0.975} = \text{Beta quantile}(0.975, 1, 3)$
+
+I computed this in r as follows:
+
+```{r}
+# Credible interval for the prior
+prior_ci <- qbeta(c(0.025, 0.975), alpha_prior, beta_prior)
+cat("95% Credible Interval for Prior:", prior_ci, "\n")
+
+```
+
+**iii. Do you think this is a reasonable prior distribution to use for this problem? Why or why not?**
+
+**Interpretation of Prior Information**:
+
+The $\text{Beta}(1,3)$ prior suggests an initial belief that it's more likely people would not choose both B and C, as the mean is $0.25$, and the distribution is skewed toward lower values. This is further supported by the 95% credible interval, which ranges from approximately $0.008$ to $0.708$, indicating a wider range but with a stronger probability mass at the lower end, reflecting a skepticism toward higher probabilities.
+
+**Flexibility**:
+
+A Beta prior is appropriate here, as it is conjugate for the binomial likelihood (the type of data we're observing with a count of choices). This allows for a straightforward update to the posterior distribution once data are observed.
+
+**Subjectivity**:
+
+If we had no strong prior information, $\text{Beta}(1,1)$ (a uniform prior) might also be considered, as it represents a neutral stance across all possible values of $\theta$. However, $\text{Beta}(1,3)$ is a reasonable choice as a skeptical prior, leaning towards a lower probability of choosing both B and C.
+
+## Part B
+
+**b. In 2009, 19 out of 47 respondents chose B and C.**
+
+**i. Find the posterior distribution for the probability 𝜃 that a person in this population would choose B and C.**
+
+Since we observed 19 out of 47 respondents choosing both B and C, the likelihood function based on a Binomial distribution is:
+
+$$ \text{Likelihood } \alpha \  \theta^{19}(1-\theta)^{47-19}$$
+
+Given that the Beta prior $\theta \sim \text{Beta}(1,3)$, we update the posterior as:
+
+$$
+\theta | \text{data} \sim \text{Beta}(\alpha + 19, \beta + 47 - 19)
+$$
+
+Posterior parameters are updated as:
+
+$$
+\alpha_{post} = \alpha_{prior} + \text{successes} \\
+\beta_{post} = \beta_{prior} + \text{failures}
+$$
+
+I computed this as follows:
+
+```{r}
+# Data from the survey
+successes <- 19
+total_responses <- 47
+failures <- total_responses - successes
+
+# Posterior parameters
+alpha_post <- alpha_prior + successes
+beta_post <- beta_prior + failures
+
+cat("Posterior Alpha:", alpha_post, "\n")
+cat("Posterior Beta:", beta_post, "\n")
+
+```
+
+**ii. Name the distribution and the posterior hyper-parameters.**
+
+The posterior distribution is a **Beta distribution**, with updated parameters:
+
+$$
+\theta|\text{data} \sim \text{Beta}(20,31)
+$$
+
+## Part C
+
+**c. Find the posterior mean and standard deviation. Find a 95% symmetric tail area credible interval for 𝜃.**
+
+The posterior mean is computed as follows:
+
+$$
+\mathbb{E}[\theta|\text{data}] = \frac{\alpha + 19}{\alpha + \beta + 47}
+$$
+
+The posterior Standard Deviation is computed as follows:
+
+$$
+\mathbb{Var}(\theta|\text{data}) = \frac{20 \cdot 31}{(20+31)^2 \cdot (20+ 31+ 1)}
+$$
+
+I computed these, as well as the $95\%$ credible interval for the posterior, as follows:
+
+```{r}
+# Posterior mean and standard deviation
+post_mean <- alpha_post / (alpha_post + beta_post)
+post_sd <- sqrt((alpha_post * beta_post) / ((alpha_post + beta_post)^2 * (alpha_post + beta_post + 1)))
+
+# 95% credible interval for the posterior
+post_ci <- qbeta(c(0.025, 0.975), alpha_post, beta_post)
+
+# Print results
+cat("Posterior Mean:", post_mean, "\n")
+cat("Posterior SD:", post_sd, "\n")
+cat("95% Credible Interval for Posterior:", post_ci, "\n")
+```
+
+## Part D
+
+**d. Make a tri-plot of the prior distribution, normalized likelihood and posterior distribution.**
+
+We can create a "triplot" to compare the prior, likelihood, and posterior distributions. Here's how to plot each of these:
+
+1.  **Prior**: $\text{Beta}(1,3)$
+2.  **Likelihood**: This is based on the observed data and can be approximated as $\theta^{19}(1-\theta)^{28}.$
+3.  **Posterior**: $\text{Beta}(20,31)$
+
+I plotted these as follows:
+
+```{r}
+# Generate data for plotting
+theta_vals <- seq(0, 1, length.out = 100)
+
+# Prior, likelihood, and posterior densities
+prior_density <- dbeta(theta_vals, alpha_prior, beta_prior)
+likelihood_density <- dbeta(theta_vals, successes + 1, failures + 1)  # Beta approximation of likelihood
+posterior_density <- dbeta(theta_vals, alpha_post, beta_post)
+
+# Create a data frame for ggplot
+plot_data <- data.frame(
+  theta = rep(theta_vals, 3),
+  density = c(prior_density, likelihood_density, posterior_density),
+  distribution = rep(c("Prior", "Likelihood", "Posterior"), each = length(theta_vals))
+)
+
+# Plot
+ggplot(plot_data, aes(x = theta, y = density, color = distribution)) +
+  geom_line(size = 1) +
+  labs(title = "Prior, Likelihood, and Posterior Distributions", x = expression(theta), y = "Density") +
+  theme_minimal()
+
+```
+
+## Part E
+
+**e. Comment on your results**
+
+**Posterior Mean and Credible Interval**:
+
+The posterior mean (around 0.3922) reflects an updated estimate of the probability of choosing B and C, balancing the prior skepticism with the observed data. This estimate suggests a higher probability of choosing B and C compared to the prior.
+
+**Visual Comparison**:
+
+The graph shows how the prior, likelihood, and posterior distributions interact:
+
+-   **Prior** (blue): The prior distribution is spread out, skewed towards lower values, indicating a skeptical belief that the probability of choosing both B and C is low.
+
+-   **Likelihood** (red): The likelihood, based on the observed data, is more centered around the observed proportion (approximately 0.4), indicating a higher probability of choosing B and C.
+
+-   **Posterior** (green): The posterior distribution is sharper and centered near 0.4, representing a compromise between the prior and likelihood. It demonstrates how the observed data updated the initial prior belief, leading to an increased posterior probability for choosing B and C.
+
+**Conclusion:**
+
+This plot effectively illustrates how the prior skepticism has been moderated by the observed data, resulting in a posterior that is both informed by the data and reflective of the initial beliefs.
+
+# **Question 2**
+
+**Times were recorded at which vehicles passed a fixed point on the M1 motorway in Bedfordshire, England on March 23, 1985. The total time was broken into 21 intervals of length 15 seconds. The number of cars passing in each interval was counted. The result was: 2, 2, 1, 1, 0, 4, 3, 0, 2, 1, 1, 1, 4, 0, 2, 2, 3, 2, 4, 3, 2. This can be summarized in the following table, that shows 3 intervals with zero cars, 5 intervals with 1 car, 7 intervals with 2 cars, 3 intervals with 3 cars and 3 intervals with 4 cars.**
+
+| **Number of Cars** | **Number of Occurrences** |
+|--------------------|---------------------------|
+| **0**              | **3**                     |
+| **1**              | **5**                     |
+| **2**              | **7**                     |
+| **3**              | **3**                     |
+| **4**              | **3**                     |
+| **5 or more**      | **0**                     |
+
+**Assume that counts of vehicles per 15-second interval are independent and identically distributed by Poisson random variables with unknown mean Λ.**
+
+## Part a
+
+**a. Assume that Λ, the rate parameter of the Poisson distribution for counts, has a continuous gamma prior distribution for Λ with shape 1 and scale 106. (The gamma distribution with shape 1 tends to a uniform distribution as the scale tends to ∞, so this prior distribution is "almost" uniform.)**
+
+**i. Find the posterior distribution of Λ.**
+
+**Likelihood**:
+
+Since the count follows a Poisson distribution, the likelihood for $\Lambda$ given the counts $X_i$ (where $i = 1,…, 21)$ is:
+
+$$P(X_i|\Lambda) = \prod_{i=1}^{21} \frac{\Lambda^{X_i}e^{-\Lambda}}{X_i!}$$
+
+The likelihood can be summarised based on the sum of counts:
+
+$$
+L(\Lambda|X) \ \alpha \ \Lambda^{\sum X_i}e^{-21\Lambda}
+$$
+
+I computed this as follows:
+
+```{r}
+# Step 1: Summarize data
+# Count of cars observed per interval
+counts <- c(2, 2, 1, 1, 0, 4, 3, 0, 2, 1, 1, 1, 4, 0, 2, 2, 3, 2, 4, 3, 2)
+
+counts
+```
+
+```{r}
+# Total number of intervals
+n_intervals <- length(counts) # 21
+
+# Step 2: Compute the sum of observed counts
+sum_counts <- sum(counts) # Sum of counts, S = 42
+
+#View
+cat('sum of counts: ', sum_counts)
+```
+
+Therefore the likelihood simplifies to:
+
+$$
+L(\Lambda|X) \ \alpha \ \Lambda^{40}e^{-21}
+$$
+
+**Prior**:
+
+We assume a Gamma prior for $\Lambda$ with parameters $a-1$ and $b=106$: $P(\Lambda) \ \alpha ^{a-1}e^{-\Lambda/b}$ I specified this as follows:
+
+```{r}
+# Step 3: Specify the prior parameters
+a_prior <- 1 # Shape parameter for Gamma prior
+b_prior <- 10^6 # Scale parameter for Gamma prior
+```
+
+**Posterior**
+
+The posterior distribution is proportional to the product of the likelihood and the prior:
+
+$$
+P(\Lambda|X) \ \alpha \ \Lambda^{42}e^{-21\Lambda}\times e^{-\Lambda/106}
+$$
+
+I computed this as follows:
+
+```{r}
+# Step 4: Compute the posterior parameters
+a_post <- a_prior + sum_counts # Posterior shape
+b_post <- 1 / (n_intervals + (1 / b_prior)) # Posterior rate
+
+#View results
+cat('Shape (a_post): ', a_post,
+    '\n Rate (b_post): ', b_post)
+```
+
+The posterior distribution of $\Lambda$ is:
+
+$$
+\Lambda|X \sim \text{Gamma}(41, 0.047598)
+$$
+
+**ii. State the distribution type and hyperparameters.**
+
+This is a Gamma distribution with updated parameters:
+
+-   Shape: 41
+
+-   Reate: 0.047598
+
+## Part b
+
+**b. Find the posterior mean and standard deviation of Λ.**
+
+For a Gamma distribution $\text{Gamma}(\alpha, \beta)$, mean and variance are given by:
+
+$$
+\text{Mean} = \frac{\alpha}{\beta} \\
+\text{Variance} = \frac{\alpha}{\beta^2}
+$$
+
+I computed these as follows:
+
+```{r}
+# Step 5: Compute posterior mean and standard deviation
+posterior_mean <- a_post / b_post
+posterior_sd <- sqrt(a_post) / b_post
+
+cat("Posterior mean of Lambda:", posterior_mean, "\n")
+cat("Posterior standard deviation of Lambda:", posterior_sd, "\n")
+```
+
+## Part c
+
+**c. Find a 95% symmetric tail area posterior credible interval for Λ.**
+
+To find the 95% credible interval for $\Lambda$, we use the 2.5th and 97.5th percentiles of the posterior Gamma distribution as follows:
+
+```{r}
+# Step 6: 95% Credible Interval for Lambda
+# Using the quantile function for the Gamma distribution
+lower_lambda <- qgamma(0.025, shape = a_post, rate = b_post)
+upper_lambda <- qgamma(0.975, shape = a_post, rate = b_post)
+
+cat("95% Credible Interval for Lambda: [", lower_lambda, ",", upper_lambda, "]\n")
+
+```
+
+## Part d
+
+**d. Find a 95% symmetric tail area posterior credible interval for Θ, the mean time between vehicle arrivals**
+
+$\Theta$ represents the mean time between arrivals, which is the inverse of $\Lambda: \Theta = \frac{1}{\Lambda}$.
+
+To find the 95% credible interval for $\Theta$:
+
+1.  Calculate the 2.5th and 97.5th percentiles of $\Lambda$
+2.  Transform these bounds to obtain the interval for $\Theta:$
+    1.  **Lower bound**: 1/ (upper bound of $\Lambda$.
+    2.  **Upper bound:**\$1/(lower bound of $\Lambda$)
+
+I computed this as follows:
+
+```{r}
+# Step 7: 95% Credible Interval for Theta (Mean Time Between Arrivals)
+# Compute the credible interval for Theta = 1 / Lambda
+lower_theta <- 1 / upper_lambda
+upper_theta <- 1 / lower_lambda
+
+cat("95% Credible Interval for Theta: [", lower_theta, ",", upper_theta, "]\n")
+```
